@@ -47,7 +47,7 @@ public class MainActivity extends ActionBarActivity implements FileListFragment.
     }
 
     @Override
-    public void onFragmentInteraction(String id) {
+    public void onFragmentInteraction(int id) {
 
     }
 }
