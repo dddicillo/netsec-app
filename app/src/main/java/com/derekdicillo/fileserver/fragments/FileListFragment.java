@@ -2,19 +2,30 @@ package com.derekdicillo.fileserver.fragments;
 
 import android.app.Activity;
 import android.os.Bundle;
-import android.app.Fragment;
+import android.support.v4.app.Fragment;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AbsListView;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.ListAdapter;
 import android.widget.TextView;
 
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.derekdicillo.fileserver.FileAPI;
 import com.derekdicillo.fileserver.R;
-
+import com.derekdicillo.fileserver.components.FileInfo;
+import com.derekdicillo.fileserver.components.FileInfoArrayAdapter;
 import com.derekdicillo.fileserver.fragments.dummy.DummyContent;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * A fragment representing a list of Items.
@@ -27,14 +38,9 @@ import com.derekdicillo.fileserver.fragments.dummy.DummyContent;
  */
 public class FileListFragment extends Fragment implements AbsListView.OnItemClickListener {
 
-    // TODO: Rename parameter arguments, choose names that match
-    // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-    private static final String ARG_PARAM1 = "param1";
-    private static final String ARG_PARAM2 = "param2";
+    private static final String TAG = "FileListFragment";
 
-    // TODO: Rename and change types of parameters
-    private String mParam1;
-    private String mParam2;
+    private static final String FILES = "apis";
 
     private OnFragmentInteractionListener mListener;
 
@@ -47,17 +53,17 @@ public class FileListFragment extends Fragment implements AbsListView.OnItemClic
      * The Adapter which will be used to populate the ListView/GridView with
      * Views.
      */
-    private ListAdapter mAdapter;
+    private FileInfoArrayAdapter mAdapter;
 
-    // TODO: Rename and change types of parameters
-    public static FileListFragment newInstance(String param1, String param2) {
-        FileListFragment fragment = new FileListFragment();
-        Bundle args = new Bundle();
-        args.putString(ARG_PARAM1, param1);
-        args.putString(ARG_PARAM2, param2);
-        fragment.setArguments(args);
-        return fragment;
-    }
+    /**
+     * The list of files used to populate the adapter
+     */
+    private List<FileInfo> mFiles;
+
+    /**
+     * Functions for interacting with the web server
+     */
+    private FileAPI mAPI;
 
     /**
      * Mandatory empty constructor for the fragment manager to instantiate the
@@ -70,14 +76,60 @@ public class FileListFragment extends Fragment implements AbsListView.OnItemClic
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        if (getArguments() != null) {
-            mParam1 = getArguments().getString(ARG_PARAM1);
-            mParam2 = getArguments().getString(ARG_PARAM2);
-        }
+        // Initialize the API
+        mAPI = FileAPI.getInstance(getActivity().getApplicationContext());
 
-        // TODO: Change Adapter to display your content
-        mAdapter = new ArrayAdapter<DummyContent.DummyItem>(getActivity(),
-                android.R.layout.simple_list_item_1, android.R.id.text1, DummyContent.ITEMS);
+        // Initialize empty array adapter
+        mAdapter = new FileInfoArrayAdapter(getActivity());
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        refreshFileList();
+    }
+
+    private void refreshFileList() {
+        final ArrayList<FileInfo> oldFiles = new ArrayList<>(mFiles);
+        mAdapter.clear();
+        mAdapter.notifyDataSetChanged();
+
+        mAPI.fileIndex(
+                new Response.Listener<JSONObject>() {
+
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        JSONArray rawFiles;
+                        try {
+                            rawFiles = response.getJSONArray(FILES);
+
+                            // Set placeholder if no files exist
+                            if (rawFiles.length() == 0) {
+                                mAdapter.add(FileInfo.emptyFileList(getString(R.string.empty_file_list)));
+                            }
+
+                            // Add files to list
+                            for (int i = 0; i < rawFiles.length(); i++) {
+                                JSONObject rawFile = rawFiles.getJSONObject(i);
+                                Log.d(TAG, rawFile.toString());
+                                mAdapter.add(new FileInfo(rawFile));
+                            }
+
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                            Log.e(TAG, "Invalid JSON");
+                        }
+
+                    }
+                },
+                new Response.ErrorListener() {
+
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        FileAPI.handleNetworkError(getActivity(), error);
+                        mAdapter.addAll(oldFiles);
+                    }
+                });
     }
 
     @Override
@@ -85,9 +137,13 @@ public class FileListFragment extends Fragment implements AbsListView.OnItemClic
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_filelist, container, false);
 
-        // Set the adapter
+        // Set the adapter (initially empty)
+        mFiles = new ArrayList<>();
+        mAdapter.setData(mFiles);
         mListView = (AbsListView) view.findViewById(android.R.id.list);
         ((AdapterView<ListAdapter>) mListView).setAdapter(mAdapter);
+
+        setEmptyText(getString(R.string.loading_data));
 
         // Set OnItemClickListener so we can be notified on item clicks
         mListView.setOnItemClickListener(this);
