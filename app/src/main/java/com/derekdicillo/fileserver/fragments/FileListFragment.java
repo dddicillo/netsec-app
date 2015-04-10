@@ -18,7 +18,6 @@ import com.derekdicillo.fileserver.FileAPI;
 import com.derekdicillo.fileserver.R;
 import com.derekdicillo.fileserver.components.FileInfo;
 import com.derekdicillo.fileserver.components.FileInfoArrayAdapter;
-import com.derekdicillo.fileserver.fragments.dummy.DummyContent;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -174,7 +173,8 @@ public class FileListFragment extends Fragment implements AbsListView.OnItemClic
         if (null != mListener) {
             // Notify the active callbacks interface (the activity, if the
             // fragment is attached to one) that an item has been selected.
-            mListener.onFragmentInteraction(DummyContent.ITEMS.get(position).id);
+            String fileId = ((TextView) view.findViewById(R.id.file_id)).getText().toString();
+            mListener.onFragmentInteraction(Integer.parseInt(fileId));
         }
     }
 
@@ -203,7 +203,7 @@ public class FileListFragment extends Fragment implements AbsListView.OnItemClic
      */
     public interface OnFragmentInteractionListener {
         // TODO: Update argument type and name
-        public void onFragmentInteraction(String id);
+        public void onFragmentInteraction(int id);
     }
 
 }
