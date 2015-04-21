@@ -2,8 +2,10 @@
 <resources>
 
     <string name="app_name">FileServer</string>
-    <string name="action_settings">Settings</string>
+    <string name="action_logout">Sign Out</string>
+    <string name="action_reload">Refresh</string>
     <string name="loading_data">Loading data…</string>
     <string name="empty_file_list">No files yet</string>
+    <string name="bytes">Bytes</string>
 
 </resources>

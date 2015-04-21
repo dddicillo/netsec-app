@@ -39,8 +39,6 @@ public class FileListFragment extends Fragment implements AbsListView.OnItemClic
 
     private static final String TAG = "FileListFragment";
 
-    private static final String FILES = "apis";
-
     private OnFragmentInteractionListener mListener;
 
     /**
@@ -88,28 +86,25 @@ public class FileListFragment extends Fragment implements AbsListView.OnItemClic
         refreshFileList();
     }
 
-    private void refreshFileList() {
+    public void refreshFileList() {
         final ArrayList<FileInfo> oldFiles = new ArrayList<>(mFiles);
         mAdapter.clear();
         mAdapter.notifyDataSetChanged();
 
         mAPI.fileIndex(
-                new Response.Listener<JSONObject>() {
+                new Response.Listener<JSONArray>() {
 
                     @Override
-                    public void onResponse(JSONObject response) {
-                        JSONArray rawFiles;
+                    public void onResponse(JSONArray response) {
                         try {
-                            rawFiles = response.getJSONArray(FILES);
-
                             // Set placeholder if no files exist
-                            if (rawFiles.length() == 0) {
+                            if (response.length() == 0) {
                                 mAdapter.add(FileInfo.emptyFileList(getString(R.string.empty_file_list)));
                             }
 
                             // Add files to list
-                            for (int i = 0; i < rawFiles.length(); i++) {
-                                JSONObject rawFile = rawFiles.getJSONObject(i);
+                            for (int i = 0; i < response.length(); i++) {
+                                JSONObject rawFile = response.getJSONObject(i);
                                 Log.d(TAG, rawFile.toString());
                                 mAdapter.add(new FileInfo(rawFile));
                             }
@@ -118,7 +113,6 @@ public class FileListFragment extends Fragment implements AbsListView.OnItemClic
                             e.printStackTrace();
                             Log.e(TAG, "Invalid JSON");
                         }
-
                     }
                 },
                 new Response.ErrorListener() {
@@ -173,8 +167,8 @@ public class FileListFragment extends Fragment implements AbsListView.OnItemClic
         if (null != mListener) {
             // Notify the active callbacks interface (the activity, if the
             // fragment is attached to one) that an item has been selected.
-            String fileId = ((TextView) view.findViewById(R.id.file_id)).getText().toString();
-            mListener.onFragmentInteraction(Integer.parseInt(fileId));
+            String fileName = ((TextView) view.findViewById(R.id.file_name)).getText().toString();
+            mListener.onFragmentInteraction(fileName);
         }
     }
 
@@ -203,7 +197,7 @@ public class FileListFragment extends Fragment implements AbsListView.OnItemClic
      */
     public interface OnFragmentInteractionListener {
         // TODO: Update argument type and name
-        public void onFragmentInteraction(int id);
+        public void onFragmentInteraction(String fileName);
     }
 
 }

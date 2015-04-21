@@ -3,6 +3,7 @@ package com.derekdicillo.fileserver;
 import android.app.Activity;
 import android.app.DownloadManager;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.preference.PreferenceManager;
@@ -13,9 +14,11 @@ import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonArrayRequest;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.File;
@@ -67,6 +70,8 @@ public class FileAPI {
         } else if (error.networkResponse.statusCode == 401) {
             // User is not authorized, we should clear the tokens and force a refresh
             Log.e(TAG, "User is not authorized, clearing session and finishing activity.");
+            Intent login = new Intent(context, LoginActivity.class);
+            context.startActivity(login);
             context.finish();
             return true;
         } else {
@@ -104,7 +109,7 @@ public class FileAPI {
         Map<String, String> params = new HashMap<>();
         params.put("email", email);
         params.put("password", password);
-        execute("mUsers/login", Request.Method.POST, params, listener, errorListener);
+        executeObject("mUsers/login", Request.Method.POST, params, listener, errorListener);
     }
 
     /**
@@ -114,8 +119,8 @@ public class FileAPI {
      * @param errorListener callback on error
      */
     public void logout(Response.Listener<JSONObject> listener, Response.ErrorListener errorListener) {
-        execute("mUsers/logout", Request.Method.POST, null, listener, errorListener);
-        // TODO Remove userId and accessToken from SharedPreferences
+        executeObject("mUsers/logout", Request.Method.POST, null, listener, errorListener);
+        //Remove userId and accessToken from SharedPreferences
         mPrefs.edit().remove(USER_ID).remove(ACCESS_TOKEN).apply();
     }
 
@@ -125,8 +130,9 @@ public class FileAPI {
      * @param listener      callback on success
      * @param errorListener callback on error
      */
-    public void fileIndex(Response.Listener<JSONObject> listener, Response.ErrorListener errorListener) {
-        execute("files", Request.Method.GET, null, listener, errorListener);
+    public void fileIndex(Response.Listener<JSONArray> listener, Response.ErrorListener errorListener) {
+        String endpoint = "Containers/" + mPrefs.getInt(USER_ID, 0) + "/files";
+        executeArray(endpoint, Request.Method.GET, null, listener, errorListener);
     }
 
     /**
@@ -145,7 +151,7 @@ public class FileAPI {
 
     }
 
-    private void execute(
+    private void executeObject(
             String endpoint,
             int method,
             Map<String, String> params,
@@ -157,7 +163,28 @@ public class FileAPI {
             parameters = new JSONObject(params);
         }
 
-        JsonObjectRequest request = new JsonObjectRequest(method, BASE_URL + endpoint, parameters, listener, errorListener);
+        String url = BASE_URL + endpoint + "?access_token=" + mPrefs.getString(ACCESS_TOKEN, "");
+
+        JsonObjectRequest request = new JsonObjectRequest(method, url, parameters, listener, errorListener);
+
+        mRequestQueue.add(request);
+    }
+
+    private void executeArray(
+            String endpoint,
+            int method,
+            Map<String, String> params,
+            Response.Listener<JSONArray> listener,
+            Response.ErrorListener errorListener) {
+
+        JSONObject parameters = null;
+        if (params != null) {
+            parameters = new JSONObject(params);
+        }
+
+        String url = BASE_URL + endpoint + "?access_token=" + mPrefs.getString(ACCESS_TOKEN, "");
+
+        JsonArrayRequest request = new JsonArrayRequest(method, url, parameters, listener, errorListener);
 
         mRequestQueue.add(request);
     }

@@ -1,7 +1,6 @@
 package com.derekdicillo.fileserver.components;
 
 import android.content.Context;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -49,8 +48,10 @@ public class FileInfoArrayAdapter extends ArrayAdapter<FileInfo> {
         }
 
         FileInfo item = getItem(position);
-        ((TextView) view.findViewById(R.id.file_id)).setText("Placeholder");//item.getId().toString());
         ((TextView) view.findViewById(R.id.file_name)).setText(item.getFileName());
+        if (item.getSize() != null) {
+            ((TextView) view.findViewById(R.id.file_size)).setText(item.getSize().toString() + " " + getContext().getString(R.string.bytes));
+        }
 
         return view;
     }

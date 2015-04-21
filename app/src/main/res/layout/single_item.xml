@@ -5,7 +5,7 @@
     android:orientation="vertical" >
 
     <TextView
-        android:id="@+id/file_id"
+        android:id="@+id/file_name"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Label"
@@ -13,10 +13,9 @@
     </TextView>
 
     <TextView
-        android:id="@+id/file_name"
+        android:id="@+id/file_size"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Sample Id"
         android:textSize="20sp" >
     </TextView>
 </LinearLayout>
