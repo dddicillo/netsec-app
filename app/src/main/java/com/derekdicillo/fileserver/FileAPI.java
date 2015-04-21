@@ -121,7 +121,7 @@ public class FileAPI {
     public void logout(Response.Listener<JSONObject> listener, Response.ErrorListener errorListener) {
         executeObject("mUsers/logout", Request.Method.POST, null, listener, errorListener);
         //Remove userId and accessToken from SharedPreferences
-        mPrefs.edit().remove(USER_ID).remove(ACCESS_TOKEN).apply();
+        mPrefs.edit().clear().apply();
     }
 
     /**
