@@ -5,6 +5,7 @@ import android.app.DownloadManager;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.net.Uri;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -26,12 +27,17 @@ import java.util.Map;
  */
 public class FileAPI {
 
-    public static final String API_PREFS = "api_prefs";
+    // SharedPreferences Keys
     public static final String USER_ID = "user_id";
     public static final String ACCESS_TOKEN = "access_token";
+
+    // JSON API Keys
+    public static final String ACCESS_TOKEN_JSON = "id";
+    public static final String USER_ID_JSON = "userId";
+
     private static final String TAG = "FileAPI";
     // TODO Replace with correct base url
-    private static final String BASE_URL = "http://192.168.1.25:3000/api/";
+    private static final String BASE_URL = "http://192.168.1.17:3000/api/";
     private static FileAPI mInstance;
     private static Context mCtx;
     private RequestQueue mRequestQueue;
@@ -42,7 +48,7 @@ public class FileAPI {
         mCtx = context;
         mRequestQueue = getRequestQueue();
         mDownloadManager = (DownloadManager) mCtx.getSystemService(Context.DOWNLOAD_SERVICE);
-        mPrefs = mCtx.getSharedPreferences(API_PREFS, Context.MODE_PRIVATE);
+        mPrefs = PreferenceManager.getDefaultSharedPreferences(context);
     }
 
     public static synchronized FileAPI getInstance(Context context) {
@@ -110,7 +116,7 @@ public class FileAPI {
     public void logout(Response.Listener<JSONObject> listener, Response.ErrorListener errorListener) {
         execute("mUsers/logout", Request.Method.POST, null, listener, errorListener);
         // TODO Remove userId and accessToken from SharedPreferences
-        mPrefs.edit().remove(USER_ID).remove(ACCESS_TOKEN);
+        mPrefs.edit().remove(USER_ID).remove(ACCESS_TOKEN).apply();
     }
 
     /**

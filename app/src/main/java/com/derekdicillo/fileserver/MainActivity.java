@@ -1,7 +1,12 @@
 package com.derekdicillo.fileserver;
 
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.v7.app.ActionBarActivity;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 
@@ -12,9 +17,22 @@ public class MainActivity extends ActionBarActivity implements FileListFragment.
 
     private static final String TAG = "MainActivity";
 
+    private SharedPreferences mPrefs;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // Launch LoginActivity if not authenticated
+        mPrefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+        Log.e(TAG, Integer.toString(mPrefs.getInt(FileAPI.USER_ID, 0)));
+
+        if (!mPrefs.contains(FileAPI.USER_ID)) {
+            Intent login = new Intent(this, LoginActivity.class);
+            startActivity(login);
+            finish();
+        }
+
         setContentView(R.layout.activity_main);
         if (savedInstanceState == null) {
             getSupportFragmentManager().beginTransaction()
