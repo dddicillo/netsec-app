@@ -88,7 +88,6 @@ public class FileListFragment extends Fragment implements AbsListView.OnItemClic
     }
 
     public void refreshFileList() {
-        final ArrayList<FileInfo> oldFiles = new ArrayList<>(mFiles);
         mAdapter.clear();
         mAdapter.notifyDataSetChanged();
 
@@ -121,7 +120,6 @@ public class FileListFragment extends Fragment implements AbsListView.OnItemClic
                     @Override
                     public void onErrorResponse(VolleyError error) {
                         FileAPI.handleNetworkError(getActivity(), error);
-                        mAdapter.addAll(oldFiles);
                     }
                 });
     }

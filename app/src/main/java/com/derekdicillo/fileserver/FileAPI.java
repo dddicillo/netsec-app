@@ -19,6 +19,8 @@ import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonArrayRequest;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
+import com.derekdicillo.fileserver.components.UploadAsyncTask;
+import com.derekdicillo.fileserver.fragments.FileListFragment;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -263,8 +265,8 @@ public class FileAPI {
         return mDownloadManager.enqueue(request);
     }
 
-    public void fileUpload(String fileName, File file, Response.Listener<JSONObject> listener, Response.ErrorListener errorListener) {
-        new UploadAsyncTask()
+    public void fileUpload(String filePath, Activity context, FileListFragment fragment) {
+        new UploadAsyncTask(context, fragment).execute(filePath);
     }
 
     private void executeObject(

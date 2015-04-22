@@ -5,8 +5,11 @@ import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.preference.PreferenceManager;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.derekdicillo.fileserver.FileAPI;
+import com.derekdicillo.fileserver.R;
+import com.derekdicillo.fileserver.fragments.FileListFragment;
 
 import org.apache.http.HttpVersion;
 import org.apache.http.client.HttpClient;
@@ -36,7 +39,7 @@ public class UploadAsyncTask extends AsyncTask<String, Void, JSONObject> {
     SharedPreferences mPrefs;
     MultipartEntityBuilder mBuilder;
 
-    public UploadAsyncTask(Context context) {
+    public UploadAsyncTask(Context context, FileListFragment fragment) {
         mCtx = context;
         mPrefs = PreferenceManager.getDefaultSharedPreferences(mCtx);
         mBuilder = MultipartEntityBuilder.create();
@@ -45,6 +48,9 @@ public class UploadAsyncTask extends AsyncTask<String, Void, JSONObject> {
 
     @Override
     protected JSONObject doInBackground(String... params) {
+
+        // TODO: Add file encryption here
+
         HttpClient httpClient = new DefaultHttpClient();
         httpClient.getParams().setParameter(CoreProtocolPNames.PROTOCOL_VERSION, HttpVersion.HTTP_1_1);
         String uri = FileAPI.BASE_URL + "/Containers/" + mPrefs.getInt(FileAPI.USER_ID, 0) + "/upload?access_token=" + mPrefs.getString(FileAPI.ACCESS_TOKEN, "");
@@ -71,4 +77,13 @@ public class UploadAsyncTask extends AsyncTask<String, Void, JSONObject> {
         return responseObj;
     }
 
+    @Override
+    protected void onPostExecute(JSONObject response) {
+        if (response != null) {
+            Log.d(TAG, response.toString());
+            Toast.makeText(mCtx, R.string.upload_success, Toast.LENGTH_LONG).show();
+        } else {
+            Toast.makeText(mCtx, R.string.upload_fail, Toast.LENGTH_LONG).show();
+        }
+    }
 }

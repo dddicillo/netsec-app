@@ -6,12 +6,11 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
-import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
-import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Toast;
@@ -19,14 +18,20 @@ import android.widget.Toast;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.derekdicillo.fileserver.fragments.FileListFragment;
+import com.ipaulpro.afilechooser.utils.FileUtils;
 
 import org.json.JSONObject;
+
+import java.io.File;
 
 
 public class MainActivity extends ActionBarActivity implements FileListFragment.OnFragmentInteractionListener {
 
     private static final String TAG = "MainActivity";
+    private static final int REQUEST_CHOOSER = 1324;
 
+
+    private Context mCtx;
     private SharedPreferences mPrefs;
     private FileAPI mAPI;
     private BroadcastReceiver mReceiver;
@@ -39,6 +44,7 @@ public class MainActivity extends ActionBarActivity implements FileListFragment.
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        mCtx = this;
 
         // Launch LoginActivity if not authenticated
         mPrefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
@@ -64,7 +70,7 @@ public class MainActivity extends ActionBarActivity implements FileListFragment.
             @Override
             public void onReceive(Context context, Intent intent) {
                 // TODO Add decryption and move file to 'Downloads' directory
-                Log.e(TAG, "Download complete");
+                Toast.makeText(mCtx, R.string.download_success, Toast.LENGTH_LONG).show();
             }
         };
     }
@@ -102,9 +108,32 @@ public class MainActivity extends ActionBarActivity implements FileListFragment.
                 return true;
             case R.id.action_upload:
                 // TODO: Add file selector intent
+                Intent chooserIntent = FileUtils.createGetContentIntent();
+                Intent intent = Intent.createChooser(chooserIntent, "Select a file");
+                startActivityForResult(intent, REQUEST_CHOOSER);
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        switch (requestCode) {
+            case REQUEST_CHOOSER:
+                if (resultCode == RESULT_OK) {
+
+                    final Uri uri = data.getData();
+
+                    // Get the File path from the Uri
+                    String path = FileUtils.getPath(this, uri);
+
+                    // Alternatively, use FileUtils.getFile(Context, Uri)
+                    if (path != null && FileUtils.isLocal(path)) {
+                        mAPI.fileUpload(path, this, mFragment);
+                    }
+                }
+                break;
         }
     }
 
