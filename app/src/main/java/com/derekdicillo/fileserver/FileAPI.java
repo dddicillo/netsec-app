@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.util.Base64;
 import android.util.Log;
@@ -261,6 +262,7 @@ public class FileAPI {
         DownloadManager.Request request = new DownloadManager.Request(Uri.parse(BASE_URL + url));
         request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_HIDDEN);
         request.setVisibleInDownloadsUi(false);
+        request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName);
         Log.d(TAG, "download requested at: " + BASE_URL + url);
         return mDownloadManager.enqueue(request);
     }
