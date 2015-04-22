@@ -31,8 +31,6 @@ public class MainActivity extends ActionBarActivity implements FileListFragment.
     private FileAPI mAPI;
     private BroadcastReceiver mReceiver;
 
-    private long downloadId;
-
     /*
      * Reference to FileListFragment for reloading results
      */
@@ -69,9 +67,19 @@ public class MainActivity extends ActionBarActivity implements FileListFragment.
                 Log.e(TAG, "Download complete");
             }
         };
-        registerReceiver(mReceiver, new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE));
     }
 
+    @Override
+    protected void onResume() {
+        registerReceiver(mReceiver, new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE));
+        super.onResume();
+    }
+
+    @Override
+    protected void onPause() {
+        unregisterReceiver(mReceiver);
+        super.onPause();
+    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -90,9 +98,7 @@ public class MainActivity extends ActionBarActivity implements FileListFragment.
                 logout();
                 return true;
             case R.id.action_reload:
-                // TODO: Return this to normal when done testing
-                //mFragment.refreshFileList();
-                downloadId = mAPI.fileDownload("activities_controller.rb");
+                mFragment.refreshFileList();
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
