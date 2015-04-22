@@ -78,6 +78,7 @@ public class FileListFragment extends Fragment implements AbsListView.OnItemClic
 
         // Initialize empty array adapter
         mAdapter = new FileInfoArrayAdapter(getActivity());
+
     }
 
     @Override

@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.preference.PreferenceManager;
+import android.util.Base64;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -19,11 +20,27 @@ import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.File;
+import java.math.BigInteger;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.Key;
+import java.security.KeyFactory;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.spec.InvalidKeySpecException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
+
+import javax.crypto.KeyAgreement;
+import javax.crypto.spec.DHParameterSpec;
+import javax.crypto.spec.DHPublicKeySpec;
 
 /**
  * Created by dddicillo on 4/8/15.
@@ -33,11 +50,14 @@ public class FileAPI {
     // SharedPreferences Keys
     public static final String USER_ID = "user_id";
     public static final String ACCESS_TOKEN = "access_token";
+    public static final String SECRET_KEY = "secret_key";
 
     // JSON API Keys
     public static final String ACCESS_TOKEN_JSON = "id";
     public static final String USER_ID_JSON = "userId";
-
+    public static final String PRIME_JSON = "prime";
+    public static final String SERVER_PUB_JSON = "serverPub";
+    final protected static char[] hexArray = "0123456789ABCDEF".toCharArray();
     private static final String TAG = "FileAPI";
     // TODO Replace with correct base url
     private static final String BASE_URL = "http://192.168.1.17:3000/api/";
@@ -84,6 +104,16 @@ public class FileAPI {
         }
     }
 
+    public static String bytesToHex(byte[] bytes) {
+        char[] hexChars = new char[bytes.length * 2];
+        for (int j = 0; j < bytes.length; j++) {
+            int v = bytes[j] & 0xFF;
+            hexChars[j * 2] = hexArray[v >>> 4];
+            hexChars[j * 2 + 1] = hexArray[v & 0x0F];
+        }
+        return new String(hexChars);
+    }
+
     private RequestQueue getRequestQueue() {
         if (mRequestQueue == null) {
             // getApplicationContext() is key, it keeps you from leaking the
@@ -110,6 +140,7 @@ public class FileAPI {
         params.put("email", email);
         params.put("password", password);
         executeObject("mUsers/login", Request.Method.POST, params, listener, errorListener);
+        // TODO: Add SSL to avoid sending data in plain text
     }
 
     /**
@@ -122,6 +153,100 @@ public class FileAPI {
         executeObject("mUsers/logout", Request.Method.POST, null, listener, errorListener);
         //Remove userId and accessToken from SharedPreferences
         mPrefs.edit().clear().apply();
+    }
+
+    /**
+     * Retrieves a 512-bit prime from the server used to generate Diffie Hellman keys
+     *
+     * @param listener      callback on success
+     * @param errorListener callback on error
+     */
+    public void getPrime(Response.Listener<JSONObject> listener, Response.ErrorListener errorListener) {
+        String endpoint = "mUsers/" + mPrefs.getInt(USER_ID, 0) + "/prime";
+        executeObject(endpoint, Request.Method.GET, null, listener, errorListener);
+    }
+
+    /**
+     * Sends generated public key to server, and retrieves server public key
+     *
+     * @param listener      callback on success
+     * @param errorListener callback on error
+     */
+    public void pubKeyExchange(byte[] publicKey, Response.Listener<JSONObject> listener, Response.ErrorListener errorListener) {
+        String endpoint = "mUsers/" + mPrefs.getInt(USER_ID, 0) + "/compute-secret";
+        Map<String, String> params = new HashMap<>();
+        Log.e(TAG, Base64.encodeToString(publicKey, Base64.NO_WRAP));
+        params.put("clientPub", Base64.encodeToString(publicKey, Base64.NO_WRAP));
+        executeObject(endpoint, Request.Method.POST, params, listener, errorListener);
+    }
+
+    /**
+     * Handles API calls required to generate a secret key shared between the client and server
+     *
+     * @param context the activity calling the method
+     */
+    public void dhKeyExchange(final Activity context) {
+        // TODO: Fix all this... somehow
+//        getPrime(new Response.Listener<JSONObject>() {
+//                     @Override
+//                     public void onResponse(JSONObject response) {
+//                         try {
+//                             final BigInteger prime = new BigInteger(response.getString(PRIME_JSON), 16);
+//                             Log.e(TAG, prime.toString(16));
+//                             KeyPairGenerator keyGen = KeyPairGenerator.getInstance("DH");
+//                             keyGen.initialize(new DHParameterSpec(prime, new BigInteger("2")));
+//                             final KeyPair keys = keyGen.generateKeyPair();
+//                             pubKeyExchange(keys.getPublic().getEncoded(), new Response.Listener<JSONObject>() {
+//                                         @Override
+//                                         public void onResponse(JSONObject response) {
+//                                             try {
+//                                                 BigInteger serverPub = new BigInteger(response.getString(SERVER_PUB_JSON), 16);
+//                                                 KeyAgreement keyAgree = KeyAgreement.getInstance("DH");
+//                                                 keyAgree.init(keys.getPrivate());
+//                                                 KeyFactory pubKeyFactory = KeyFactory.getInstance("DH");
+//                                                 Key serverPubEnc = pubKeyFactory.generatePublic(new DHPublicKeySpec(serverPub, prime, new BigInteger("2")));
+//                                                 keyAgree.doPhase(serverPubEnc, true);
+//                                                 Log.e(TAG, Base64.encodeToString(keyAgree.generateSecret(), Base64.DEFAULT));
+//                                                 mPrefs.edit().putString(SECRET_KEY, Base64.encodeToString(keyAgree.generateSecret(), Base64.DEFAULT)).apply();
+//                                             } catch (JSONException e) {
+//                                                 e.printStackTrace();
+//                                                 Log.e(TAG, "Invalid JSON");
+//                                             } catch (NoSuchAlgorithmException e) {
+//                                                 e.printStackTrace();
+//                                                 Log.e(TAG, "Algorithm does not exist");
+//                                             } catch (InvalidKeyException e) {
+//                                                 e.printStackTrace();
+//                                                 Log.e(TAG, "Invalid private key");
+//                                             } catch (InvalidKeySpecException e) {
+//                                                 e.printStackTrace();
+//                                                 Log.e(TAG, "Invalid key spec");
+//                                             }
+//                                         }
+//                                     },
+//                                     new Response.ErrorListener() {
+//                                         @Override
+//                                         public void onErrorResponse(VolleyError error) {
+//                                             handleNetworkError(context, error);
+//                                         }
+//                                     });
+//                         } catch (JSONException e) {
+//                             e.printStackTrace();
+//                             Log.e(TAG, "Invalid JSON");
+//                         } catch (NoSuchAlgorithmException e) {
+//                             e.printStackTrace();
+//                             Log.e(TAG, "Algorithm does not exist");
+//                         } catch (InvalidAlgorithmParameterException e) {
+//                             e.printStackTrace();
+//                             Log.e(TAG, "Invalid algorithm params");
+//                         }
+//                     }
+//                 },
+//                new Response.ErrorListener() {
+//                    @Override
+//                    public void onErrorResponse(VolleyError error) {
+//                        handleNetworkError(context, error);
+//                    }
+//                });
     }
 
     /**
@@ -141,8 +266,8 @@ public class FileAPI {
      * @param fileName name of file to be downloaded
      */
     public void fileDownload(String fileName) {
-        String url = String.format("Containers/%s/download-file/%s", mPrefs.getString(USER_ID, "empty"), fileName);
-        DownloadManager.Request request = new DownloadManager.Request(Uri.parse(url));
+        String url = String.format("Containers/%d/download-file/%s", mPrefs.getInt(USER_ID, 0), fileName);
+        DownloadManager.Request request = new DownloadManager.Request(Uri.parse(BASE_URL + url));
         mDownloadManager.enqueue(request);
         // TODO Register BroadcastReceiver
     }

@@ -1,6 +1,10 @@
 package com.derekdicillo.fileserver;
 
+import android.app.DownloadManager;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
@@ -34,12 +38,15 @@ public class MainActivity extends ActionBarActivity implements FileListFragment.
 
         // Launch LoginActivity if not authenticated
         mPrefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
-
         if (!mPrefs.contains(FileAPI.USER_ID)) {
             launchLoginActivity();
         }
 
+        // Run Diffie Hellman Key Exchange if no secret key exists
         mAPI = FileAPI.getInstance(getApplicationContext());
+        if (!mPrefs.contains(FileAPI.SECRET_KEY)) {
+            mAPI.dhKeyExchange(this);
+        }
 
         setContentView(R.layout.activity_main);
         mFragment = new FileListFragment();
@@ -48,6 +55,13 @@ public class MainActivity extends ActionBarActivity implements FileListFragment.
                     .add(R.id.container, mFragment)
                     .commit();
         }
+
+        registerReceiver(new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                Log.e(TAG, intent.getData().toString());
+            }
+        }, IntentFilter.create(DownloadManager.ACTION_DOWNLOAD_COMPLETE, "*/*"));
     }
 
 
@@ -68,7 +82,9 @@ public class MainActivity extends ActionBarActivity implements FileListFragment.
                 logout();
                 return true;
             case R.id.action_reload:
-                mFragment.refreshFileList();
+                // TODO: Return this to normal when done testing
+                //mFragment.refreshFileList();
+                mAPI.fileDownload("activities_controller.rb");
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
