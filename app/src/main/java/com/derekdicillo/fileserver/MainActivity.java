@@ -6,12 +6,15 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.database.Cursor;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.Toast;
 
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
@@ -26,6 +29,9 @@ public class MainActivity extends ActionBarActivity implements FileListFragment.
 
     private SharedPreferences mPrefs;
     private FileAPI mAPI;
+    private BroadcastReceiver mReceiver;
+
+    private long downloadId;
 
     /*
      * Reference to FileListFragment for reloading results
@@ -56,12 +62,14 @@ public class MainActivity extends ActionBarActivity implements FileListFragment.
                     .commit();
         }
 
-        registerReceiver(new BroadcastReceiver() {
+        mReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                Log.e(TAG, intent.getData().toString());
+                // TODO Add decryption and move file to 'Downloads' directory
+                Log.e(TAG, "Download complete");
             }
-        }, IntentFilter.create(DownloadManager.ACTION_DOWNLOAD_COMPLETE, "*/*"));
+        };
+        registerReceiver(mReceiver, new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE));
     }
 
 
@@ -84,7 +92,7 @@ public class MainActivity extends ActionBarActivity implements FileListFragment.
             case R.id.action_reload:
                 // TODO: Return this to normal when done testing
                 //mFragment.refreshFileList();
-                mAPI.fileDownload("activities_controller.rb");
+                downloadId = mAPI.fileDownload("activities_controller.rb");
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -118,6 +126,6 @@ public class MainActivity extends ActionBarActivity implements FileListFragment.
 
     @Override
     public void onFragmentInteraction(String fileName) {
-
+        mAPI.fileDownload(fileName);
     }
 }

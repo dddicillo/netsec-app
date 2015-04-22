@@ -20,27 +20,11 @@ import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
 
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.File;
-import java.math.BigInteger;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
-import java.security.Key;
-import java.security.KeyFactory;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.spec.InvalidKeySpecException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Random;
-
-import javax.crypto.KeyAgreement;
-import javax.crypto.spec.DHParameterSpec;
-import javax.crypto.spec.DHPublicKeySpec;
 
 /**
  * Created by dddicillo on 4/8/15.
@@ -121,6 +105,10 @@ public class FileAPI {
             mRequestQueue = Volley.newRequestQueue(mCtx.getApplicationContext());
         }
         return mRequestQueue;
+    }
+
+    public DownloadManager getmDownloadManager() {
+        return mDownloadManager;
     }
 
     private <T> void addToRequestQueue(Request<T> req) {
@@ -265,11 +253,13 @@ public class FileAPI {
      *
      * @param fileName name of file to be downloaded
      */
-    public void fileDownload(String fileName) {
-        String url = String.format("Containers/%d/download-file/%s", mPrefs.getInt(USER_ID, 0), fileName);
+    public long fileDownload(String fileName) {
+        String url = String.format("Containers/%d/download-file/%s?access_token=%s", mPrefs.getInt(USER_ID, 0), fileName, mPrefs.getString(ACCESS_TOKEN, ""));
         DownloadManager.Request request = new DownloadManager.Request(Uri.parse(BASE_URL + url));
-        mDownloadManager.enqueue(request);
-        // TODO Register BroadcastReceiver
+        request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_HIDDEN);
+        request.setVisibleInDownloadsUi(false);
+        Log.d(TAG, "download requested at: " + BASE_URL + url);
+        return mDownloadManager.enqueue(request);
     }
 
     public void fileUpload(String fileName, File file, Response.Listener<JSONObject> listener, Response.ErrorListener errorListener) {
