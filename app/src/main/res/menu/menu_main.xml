@@ -5,4 +5,5 @@
         android:orderInCategory="100" app:showAsAction="ifRoom" />
     <item android:id="@+id/action_reload" android:title="@string/action_reload"
         android:icon="@drawable/ic_action_refresh" app:showAsAction="ifRoom" />
+    <item android:id="@+id/action_upload" android:title="@string/action_upload" />
 </menu>

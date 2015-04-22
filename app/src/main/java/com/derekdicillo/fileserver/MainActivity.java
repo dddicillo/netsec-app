@@ -100,6 +100,9 @@ public class MainActivity extends ActionBarActivity implements FileListFragment.
             case R.id.action_reload:
                 mFragment.refreshFileList();
                 return true;
+            case R.id.action_upload:
+                // TODO: Add file selector intent
+                return true;
             default:
                 return super.onOptionsItemSelected(item);
         }

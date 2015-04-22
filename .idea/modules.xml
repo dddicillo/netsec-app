@@ -4,6 +4,8 @@
     <modules>
       <module fileurl="file://$PROJECT_DIR$/FileServer.iml" filepath="$PROJECT_DIR$/FileServer.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
+      <module fileurl="file://$PROJECT_DIR$/httpcore-4.4.1/httpcore-4.4.1.iml" filepath="$PROJECT_DIR$/httpcore-4.4.1/httpcore-4.4.1.iml" />
+      <module fileurl="file://$PROJECT_DIR$/httpmime-4.3/httpmime-4.3.iml" filepath="$PROJECT_DIR$/httpmime-4.3/httpmime-4.3.iml" />
       <module fileurl="file://$PROJECT_DIR$/volley/volley.iml" filepath="$PROJECT_DIR$/volley/volley.iml" />
     </modules>
   </component>

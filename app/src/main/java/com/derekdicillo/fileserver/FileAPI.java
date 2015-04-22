@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.preference.PreferenceManager;
 import android.util.Base64;
 import android.util.Log;
@@ -44,7 +45,7 @@ public class FileAPI {
     final protected static char[] hexArray = "0123456789ABCDEF".toCharArray();
     private static final String TAG = "FileAPI";
     // TODO Replace with correct base url
-    private static final String BASE_URL = "http://192.168.1.17:3000/api/";
+    public static final String BASE_URL = "http://192.168.1.17:3000/api/";
     private static FileAPI mInstance;
     private static Context mCtx;
     private RequestQueue mRequestQueue;
@@ -263,7 +264,7 @@ public class FileAPI {
     }
 
     public void fileUpload(String fileName, File file, Response.Listener<JSONObject> listener, Response.ErrorListener errorListener) {
-
+        new UploadAsyncTask()
     }
 
     private void executeObject(
