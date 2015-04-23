@@ -25,7 +25,7 @@ import org.json.JSONObject;
 import java.io.File;
 
 
-public class MainActivity extends ActionBarActivity implements FileListFragment.OnFragmentInteractionListener {
+public class MainActivity extends ActionBarActivity {
 
     private static final String TAG = "MainActivity";
     private static final int REQUEST_CHOOSER = 1324;
@@ -107,7 +107,6 @@ public class MainActivity extends ActionBarActivity implements FileListFragment.
                 mFragment.refreshFileList();
                 return true;
             case R.id.action_upload:
-                // TODO: Add file selector intent
                 Intent chooserIntent = FileUtils.createGetContentIntent();
                 Intent intent = Intent.createChooser(chooserIntent, "Select a file");
                 startActivityForResult(intent, REQUEST_CHOOSER);
@@ -160,10 +159,5 @@ public class MainActivity extends ActionBarActivity implements FileListFragment.
         Intent login = new Intent(this, LoginActivity.class);
         startActivity(login);
         finish();
-    }
-
-    @Override
-    public void onFragmentInteraction(String fileName) {
-        mAPI.fileDownload(fileName);
     }
 }

@@ -11,6 +11,9 @@
     <string name="download_success">Download Successful</string>
     <string name="upload_success">Upload Successful</string>
     <string name="upload_fail">Error: Unable to Upload</string>
+    <string name="action_download">Download</string>
+    <string name="action_delete">Delete</string>
+    <string name="delete_success">Deletion Successful</string>
 
     <string name="empty_directory">Empty Directory</string>
     <string name="storage_removed">Storage was removed or unmounted.</string>

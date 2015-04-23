@@ -17,9 +17,11 @@ import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
+import com.android.volley.toolbox.HurlStack;
 import com.android.volley.toolbox.JsonArrayRequest;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
+import com.derekdicillo.fileserver.components.CustomTrustManager;
 import com.derekdicillo.fileserver.components.UploadAsyncTask;
 import com.derekdicillo.fileserver.fragments.FileListFragment;
 
@@ -27,8 +29,22 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.security.GeneralSecurityException;
+import java.security.SecureRandom;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import java.util.HashMap;
 import java.util.Map;
+
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 
 /**
  * Created by dddicillo on 4/8/15.
@@ -48,7 +64,7 @@ public class FileAPI {
     final protected static char[] hexArray = "0123456789ABCDEF".toCharArray();
     private static final String TAG = "FileAPI";
     // TODO Replace with correct base url
-    public static final String BASE_URL = "http://192.168.1.17:3000/api/";
+    public static final String BASE_URL = "https://192.168.1.17:3000/api/";
     private static FileAPI mInstance;
     private static Context mCtx;
     private RequestQueue mRequestQueue;
@@ -57,7 +73,29 @@ public class FileAPI {
 
     private FileAPI(Context context) {
         mCtx = context;
-        mRequestQueue = getRequestQueue();
+
+        if (mRequestQueue == null) {
+            try {
+                SSLContext sc = SSLContext.getInstance("SSL");
+                TrustManager[] trustWHCert = new TrustManager[]{new CustomTrustManager(mCtx)};
+                sc.init(null, trustWHCert, new SecureRandom());
+
+                HttpsURLConnection.setDefaultHostnameVerifier(new HostnameVerifier() {
+                    @Override
+                    public boolean verify(String hostname, SSLSession session) {
+                        return true;
+                    }
+                });
+
+                HurlStack stack = new HurlStack(null, sc.getSocketFactory());
+                mRequestQueue = Volley.newRequestQueue(context.getApplicationContext(), stack);
+
+            } catch (GeneralSecurityException e) {
+                Log.e(TAG, "Error creating Volley RequestQueue", e);
+            }
+
+        }
+
         mDownloadManager = (DownloadManager) mCtx.getSystemService(Context.DOWNLOAD_SERVICE);
         mPrefs = PreferenceManager.getDefaultSharedPreferences(context);
     }
@@ -271,6 +309,11 @@ public class FileAPI {
         new UploadAsyncTask(context, fragment).execute(filePath);
     }
 
+    public void fileDelete(String fileName, Response.Listener<JSONObject> listener, Response.ErrorListener errorListener) {
+        String url = String.format("Containers/%d/files/%s", mPrefs.getInt(USER_ID, 0), fileName, mPrefs.getString(ACCESS_TOKEN, ""));
+        executeObject(url, Request.Method.DELETE, null, listener, errorListener);
+    }
+
     private void executeObject(
             String endpoint,
             int method,
@@ -284,10 +327,9 @@ public class FileAPI {
         }
 
         String url = BASE_URL + endpoint + "?access_token=" + mPrefs.getString(ACCESS_TOKEN, "");
-
         JsonObjectRequest request = new JsonObjectRequest(method, url, parameters, listener, errorListener);
-
         mRequestQueue.add(request);
+        Log.d(TAG, "Request to: " + url);
     }
 
     private void executeArray(
