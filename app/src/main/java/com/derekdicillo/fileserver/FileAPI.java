@@ -5,9 +5,6 @@ import android.app.DownloadManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.net.Uri;
-import android.os.AsyncTask;
-import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.util.Base64;
 import android.util.Log;
@@ -22,29 +19,19 @@ import com.android.volley.toolbox.JsonArrayRequest;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
 import com.derekdicillo.fileserver.components.CustomTrustManager;
+import com.derekdicillo.fileserver.components.DownloadAsyncTask;
 import com.derekdicillo.fileserver.components.UploadAsyncTask;
-import com.derekdicillo.fileserver.fragments.FileListFragment;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
 import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
-import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
-import java.security.cert.X509Certificate;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
 
 /**
  * Created by dddicillo on 4/8/15.
@@ -63,8 +50,9 @@ public class FileAPI {
     public static final String SERVER_PUB_JSON = "serverPub";
     final protected static char[] hexArray = "0123456789ABCDEF".toCharArray();
     private static final String TAG = "FileAPI";
-    // TODO Replace with correct base url
-    public static final String BASE_URL = "https://192.168.1.17:3000/api/";
+
+    public static final String BASE_URL = "https://netsec.techexplored.io:4000/api/";
+
     private static FileAPI mInstance;
     private static Context mCtx;
     private RequestQueue mRequestQueue;
@@ -77,15 +65,8 @@ public class FileAPI {
         if (mRequestQueue == null) {
             try {
                 SSLContext sc = SSLContext.getInstance("SSL");
-                TrustManager[] trustWHCert = new TrustManager[]{new CustomTrustManager(mCtx)};
-                sc.init(null, trustWHCert, new SecureRandom());
-
-                HttpsURLConnection.setDefaultHostnameVerifier(new HostnameVerifier() {
-                    @Override
-                    public boolean verify(String hostname, SSLSession session) {
-                        return true;
-                    }
-                });
+                TrustManager[] tm = new TrustManager[]{new CustomTrustManager(mCtx)};
+                sc.init(null, tm, new SecureRandom());
 
                 HurlStack stack = new HurlStack(null, sc.getSocketFactory());
                 mRequestQueue = Volley.newRequestQueue(context.getApplicationContext(), stack);
@@ -295,18 +276,19 @@ public class FileAPI {
      *
      * @param fileName name of file to be downloaded
      */
-    public long fileDownload(String fileName) {
-        String url = String.format("Containers/%d/download-file/%s?access_token=%s", mPrefs.getInt(USER_ID, 0), fileName, mPrefs.getString(ACCESS_TOKEN, ""));
-        DownloadManager.Request request = new DownloadManager.Request(Uri.parse(BASE_URL + url));
-        request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_HIDDEN);
-        request.setVisibleInDownloadsUi(false);
-        request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName);
-        Log.d(TAG, "download requested at: " + BASE_URL + url);
-        return mDownloadManager.enqueue(request);
+    public void fileDownload(String fileName, Activity context) {
+//        String url = String.format("Containers/%d/download-file/%s?access_token=%s", mPrefs.getInt(USER_ID, 0), fileName, mPrefs.getString(ACCESS_TOKEN, ""));
+//        DownloadManager.Request request = new DownloadManager.Request(Uri.parse(BASE_URL + url));
+//        request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_HIDDEN);
+//        request.setVisibleInDownloadsUi(false);
+//        request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName);
+//        Log.d(TAG, "download requested at: " + BASE_URL + url);
+//        return mDownloadManager.enqueue(request);
+        new DownloadAsyncTask(context).execute(fileName);
     }
 
-    public void fileUpload(String filePath, Activity context, FileListFragment fragment) {
-        new UploadAsyncTask(context, fragment).execute(filePath);
+    public void fileUpload(String filePath, Activity context) {
+        new UploadAsyncTask(context).execute(filePath);
     }
 
     public void fileDelete(String fileName, Response.Listener<JSONObject> listener, Response.ErrorListener errorListener) {

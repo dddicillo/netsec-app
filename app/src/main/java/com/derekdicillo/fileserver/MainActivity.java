@@ -22,8 +22,6 @@ import com.ipaulpro.afilechooser.utils.FileUtils;
 
 import org.json.JSONObject;
 
-import java.io.File;
-
 
 public class MainActivity extends ActionBarActivity {
 
@@ -129,7 +127,7 @@ public class MainActivity extends ActionBarActivity {
 
                     // Alternatively, use FileUtils.getFile(Context, Uri)
                     if (path != null && FileUtils.isLocal(path)) {
-                        mAPI.fileUpload(path, this, mFragment);
+                        mAPI.fileUpload(path, this);
                     }
                 }
                 break;

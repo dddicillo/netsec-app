@@ -9,11 +9,12 @@ import android.widget.Toast;
 
 import com.derekdicillo.fileserver.FileAPI;
 import com.derekdicillo.fileserver.R;
-import com.derekdicillo.fileserver.fragments.FileListFragment;
 
 import org.apache.http.HttpVersion;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.conn.scheme.Scheme;
+import org.apache.http.conn.ssl.SSLSocketFactory;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.mime.HttpMultipartMode;
 import org.apache.http.entity.mime.MultipartEntityBuilder;
@@ -25,6 +26,14 @@ import org.json.JSONObject;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.Socket;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
+
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
 
 
 /**
@@ -39,7 +48,7 @@ public class UploadAsyncTask extends AsyncTask<String, Void, JSONObject> {
     SharedPreferences mPrefs;
     MultipartEntityBuilder mBuilder;
 
-    public UploadAsyncTask(Context context, FileListFragment fragment) {
+    public UploadAsyncTask(Context context) {
         mCtx = context;
         mPrefs = PreferenceManager.getDefaultSharedPreferences(mCtx);
         mBuilder = MultipartEntityBuilder.create();
@@ -49,9 +58,18 @@ public class UploadAsyncTask extends AsyncTask<String, Void, JSONObject> {
     @Override
     protected JSONObject doInBackground(String... params) {
 
-        // TODO: Add file encryption here
-
         HttpClient httpClient = new DefaultHttpClient();
+        try {
+            httpClient.getConnectionManager().getSchemeRegistry().register(new Scheme("https", new MySSLSocketFactory(), 443));
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (KeyManagementException e) {
+            e.printStackTrace();
+        } catch (KeyStoreException e) {
+            e.printStackTrace();
+        } catch (UnrecoverableKeyException e) {
+            e.printStackTrace();
+        }
         httpClient.getParams().setParameter(CoreProtocolPNames.PROTOCOL_VERSION, HttpVersion.HTTP_1_1);
         String uri = FileAPI.BASE_URL + "/Containers/" + mPrefs.getInt(FileAPI.USER_ID, 0) + "/upload?access_token=" + mPrefs.getString(FileAPI.ACCESS_TOKEN, "");
         HttpPost httpPost = new HttpPost(uri);
@@ -85,5 +103,25 @@ public class UploadAsyncTask extends AsyncTask<String, Void, JSONObject> {
         } else {
             Toast.makeText(mCtx, R.string.upload_fail, Toast.LENGTH_LONG).show();
         }
+    }
+
+    private class MySSLSocketFactory extends SSLSocketFactory {
+        protected SSLContext sslContext = SSLContext.getInstance("SSL");
+
+        public MySSLSocketFactory() throws NoSuchAlgorithmException, KeyManagementException, KeyStoreException, UnrecoverableKeyException {
+            super(null, null, null, null, null, null);
+            sslContext.init(null, new TrustManager[]{new CustomTrustManager(mCtx)}, null);
+        }
+
+        @Override
+        public Socket createSocket(Socket socket, String host, int port, boolean autoClose) throws IOException {
+            return sslContext.getSocketFactory().createSocket(socket, host, port, autoClose);
+        }
+
+        @Override
+        public Socket createSocket() throws IOException {
+            return sslContext.getSocketFactory().createSocket();
+        }
+
     }
 }

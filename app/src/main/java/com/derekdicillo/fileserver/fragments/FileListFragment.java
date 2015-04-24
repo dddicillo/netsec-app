@@ -156,7 +156,7 @@ public class FileListFragment extends Fragment {
 
         switch (item.getItemId()) {
             case R.id.action_download:
-                mAPI.fileDownload(fileName);
+                mAPI.fileDownload(fileName, getActivity());
                 return true;
             case R.id.action_delete:
                 mAPI.fileDelete(fileName, new Response.Listener<JSONObject>() {
