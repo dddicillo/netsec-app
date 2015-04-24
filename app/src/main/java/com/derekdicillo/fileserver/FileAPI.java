@@ -42,17 +42,17 @@ public class FileAPI {
     public static final String USER_ID = "user_id";
     public static final String ACCESS_TOKEN = "access_token";
     public static final String SECRET_KEY = "secret_key";
+    public static final String EMAIL = "email";
+    public static final String PASSWORD = "password";
 
     // JSON API Keys
     public static final String ACCESS_TOKEN_JSON = "id";
     public static final String USER_ID_JSON = "userId";
     public static final String PRIME_JSON = "prime";
     public static final String SERVER_PUB_JSON = "serverPub";
+    public static final String BASE_URL = "https://netsec.techexplored.io:4000/api/";
     final protected static char[] hexArray = "0123456789ABCDEF".toCharArray();
     private static final String TAG = "FileAPI";
-
-    public static final String BASE_URL = "https://netsec.techexplored.io:4000/api/";
-
     private static FileAPI mInstance;
     private static Context mCtx;
     private RequestQueue mRequestQueue;
@@ -139,6 +139,21 @@ public class FileAPI {
     }
 
     /**
+     * Create new user with the given credentials
+     *
+     * @param email         the user's email address
+     * @param password      the user's password
+     * @param listener      callback on success
+     * @param errorListener callback on error
+     */
+    public void signup(String email, String password, Response.Listener<JSONObject> listener, Response.ErrorListener errorListener) {
+        Map<String, String> params = new HashMap<>();
+        params.put("email", email);
+        params.put("password", password);
+        executeObject("mUsers", Request.Method.POST, params, listener, errorListener);
+    }
+
+    /**
      * Retrieve userId and accessToken for user with specified email and password
      *
      * @param email         the user's email address
@@ -151,7 +166,6 @@ public class FileAPI {
         params.put("email", email);
         params.put("password", password);
         executeObject("mUsers/login", Request.Method.POST, params, listener, errorListener);
-        // TODO: Add SSL to avoid sending data in plain text
     }
 
     /**
@@ -277,13 +291,6 @@ public class FileAPI {
      * @param fileName name of file to be downloaded
      */
     public void fileDownload(String fileName, Activity context) {
-//        String url = String.format("Containers/%d/download-file/%s?access_token=%s", mPrefs.getInt(USER_ID, 0), fileName, mPrefs.getString(ACCESS_TOKEN, ""));
-//        DownloadManager.Request request = new DownloadManager.Request(Uri.parse(BASE_URL + url));
-//        request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_HIDDEN);
-//        request.setVisibleInDownloadsUi(false);
-//        request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName);
-//        Log.d(TAG, "download requested at: " + BASE_URL + url);
-//        return mDownloadManager.enqueue(request);
         new DownloadAsyncTask(context).execute(fileName);
     }
 
@@ -292,8 +299,8 @@ public class FileAPI {
     }
 
     public void fileDelete(String fileName, Response.Listener<JSONObject> listener, Response.ErrorListener errorListener) {
-        String url = String.format("Containers/%d/files/%s", mPrefs.getInt(USER_ID, 0), fileName, mPrefs.getString(ACCESS_TOKEN, ""));
-        executeObject(url, Request.Method.DELETE, null, listener, errorListener);
+        String endpoint = String.format("Containers/%d/files/%s", mPrefs.getInt(USER_ID, 0), fileName);
+        executeObject(endpoint, Request.Method.DELETE, null, listener, errorListener);
     }
 
     private void executeObject(
@@ -312,6 +319,9 @@ public class FileAPI {
         JsonObjectRequest request = new JsonObjectRequest(method, url, parameters, listener, errorListener);
         mRequestQueue.add(request);
         Log.d(TAG, "Request to: " + url);
+        if (parameters != null) {
+            Log.d(TAG, "Params: " + parameters.toString());
+        }
     }
 
     private void executeArray(
@@ -327,9 +337,11 @@ public class FileAPI {
         }
 
         String url = BASE_URL + endpoint + "?access_token=" + mPrefs.getString(ACCESS_TOKEN, "");
-
         JsonArrayRequest request = new JsonArrayRequest(method, url, parameters, listener, errorListener);
-
         mRequestQueue.add(request);
+        Log.d(TAG, "Request to: " + url);
+        if (parameters != null) {
+            Log.d(TAG, "Params: " + parameters.toString());
+        }
     }
 }

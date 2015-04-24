@@ -5,7 +5,6 @@ import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.LoaderManager.LoaderCallbacks;
-import android.content.Context;
 import android.content.CursorLoader;
 import android.content.Intent;
 import android.content.Loader;
@@ -16,9 +15,12 @@ import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.provider.ContactsContract;
+import android.support.v7.app.ActionBarActivity;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.KeyEvent;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.inputmethod.EditorInfo;
@@ -42,7 +44,7 @@ import java.util.List;
 /**
  * A login screen that offers login via email/password.
  */
-public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> {
+public class LoginActivity extends ActionBarActivity implements LoaderCallbacks<Cursor> {
 
     private static final String TAG = "LoginActivity";
 
@@ -64,11 +66,16 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> {
     private EditText mPasswordView;
     private View mProgressView;
     private View mLoginFormView;
+    private Button mEmailSignInButton;
+    private Boolean mLogin;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
+
+        // Set as login page initially
+        mLogin = true;
 
         // Initialize the API
         mAPI = FileAPI.getInstance(getApplicationContext());
@@ -92,7 +99,7 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> {
             }
         });
 
-        Button mEmailSignInButton = (Button) findViewById(R.id.email_sign_in_button);
+        mEmailSignInButton = (Button) findViewById(R.id.email_sign_in_button);
         mEmailSignInButton.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -102,6 +109,31 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> {
 
         mLoginFormView = findViewById(R.id.login_form);
         mProgressView = findViewById(R.id.login_progress);
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_login, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.action_signup:
+                // Swap activity between login and signup
+                if (mLogin) {
+                    mEmailSignInButton.setText(getText(R.string.action_signup));
+                    item.setTitle(R.string.action_sign_in);
+                } else {
+                    mEmailSignInButton.setText(getText(R.string.action_sign_in));
+                    item.setTitle(R.string.action_signup);
+                }
+                mLogin = !mLogin;
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
     }
 
     private void populateAutoComplete() {
@@ -155,37 +187,83 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> {
             // perform the user login attempt.
             showProgress(true);
 
-            mAPI.login(email, password, new Response.Listener<JSONObject>() {
-                        @Override
-                        public void onResponse(JSONObject response) {
-                            showProgress(false);
-                            SharedPreferences.Editor editor = mPrefs.edit();
-                            try {
-                                editor.putString(FileAPI.ACCESS_TOKEN, response.getString(FileAPI.ACCESS_TOKEN_JSON));
-                                editor.putInt(FileAPI.USER_ID, response.getInt(FileAPI.USER_ID_JSON));
-                            } catch (JSONException e) {
-                                e.printStackTrace();
-                                Log.e(TAG, "Invalid JSON");
-                                return;
+            if (mLogin) {
+                Log.d(TAG, String.format("Login Request Params-- %s:%s", email, password));
+                mAPI.login(email, password, new Response.Listener<JSONObject>() {
+                            @Override
+                            public void onResponse(JSONObject response) {
+                                showProgress(false);
+                                SharedPreferences.Editor editor = mPrefs.edit();
+                                try {
+                                    editor.putString(FileAPI.ACCESS_TOKEN, response.getString(FileAPI.ACCESS_TOKEN_JSON));
+                                    editor.putInt(FileAPI.USER_ID, response.getInt(FileAPI.USER_ID_JSON));
+                                } catch (JSONException e) {
+                                    e.printStackTrace();
+                                    Log.e(TAG, "Invalid JSON");
+                                    return;
+                                }
+                                editor.apply();
+                                Intent mainActivity = new Intent(mCtx, MainActivity.class);
+                                mCtx.startActivity(mainActivity);
+                                mCtx.finish();
                             }
-                            editor.apply();
-                            Intent mainActivity = new Intent(mCtx, MainActivity.class);
-                            mCtx.startActivity(mainActivity);
-                            mCtx.finish();
-                        }
-                    },
-                    new Response.ErrorListener() {
-                        @Override
-                        public void onErrorResponse(VolleyError error) {
-                            showProgress(false);
-                            if (error.networkResponse == null) {
-                                Log.e(TAG, "No network response, network is not available.");
-                                Toast.makeText(mCtx, "Unable to reach network.", Toast.LENGTH_LONG).show();
+                        },
+                        new Response.ErrorListener() {
+                            @Override
+                            public void onErrorResponse(VolleyError error) {
+                                showProgress(false);
+                                if (error.networkResponse == null) {
+                                    Log.e(TAG, "No network response, network is not available.");
+                                    Toast.makeText(mCtx, "Unable to reach network.", Toast.LENGTH_LONG).show();
+                                } else {
+                                    mEmailView.setError(getString(R.string.error_incorrect_credentials));
+                                    mEmailView.requestFocus();
+                                }
                             }
-                            mEmailView.setError(getString(R.string.error_incorrect_credentials));
-                            mEmailView.requestFocus();
-                        }
-                    });
+                        });
+            } else {
+                Log.d(TAG, String.format("Sign Up Request Params-- %s:%s", email, password));
+//                SharedPreferences.Editor editor = mPrefs.edit();
+//                editor.putString(FileAPI.EMAIL, email);
+//                editor.putString(FileAPI.PASSWORD, password);
+//                editor.apply();
+                mAPI.signup(email, password, new Response.Listener<JSONObject>() {
+                            @Override
+                            public void onResponse(JSONObject response) {
+                                Toast.makeText(mCtx, R.string.signup_success, Toast.LENGTH_LONG).show();
+                                showProgress(false);
+//                                String email = mPrefs.getString(FileAPI.EMAIL, "");
+//                                String password = mPrefs.getString(FileAPI.PASSWORD, "");
+//                                mPrefs.edit().clear().apply();
+                                mLogin = true;
+                                attemptLogin();
+                            }
+                        },
+                        new Response.ErrorListener() {
+                            @Override
+                            public void onErrorResponse(VolleyError error) {
+                                showProgress(false);
+                                if (error.networkResponse == null) {
+                                    Log.e(TAG, "No network response, network is not available.");
+                                    Toast.makeText(mCtx, "Unable to reach network.", Toast.LENGTH_LONG).show();
+                                } else {
+                                    try {
+                                        // Check for potential bug (all is well)
+                                        JSONObject response = new JSONObject(new String(error.networkResponse.data));
+                                        JSONObject details = response.getJSONObject("error").getJSONObject("details").getJSONObject("codes");
+                                        if (details.getJSONArray("password").get(0).equals("presence") &&
+                                                details.getJSONArray("email").get(0).equals("presence")) {
+                                            Toast.makeText(mCtx, R.string.signup_success, Toast.LENGTH_LONG).show();
+                                            mLogin = true;
+                                            attemptLogin();
+                                        }
+                                    } catch (JSONException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+                            }
+                        });
+            }
         }
     }
 
@@ -232,6 +310,12 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> {
             // and hide the relevant UI components.
             mProgressView.setVisibility(show ? View.VISIBLE : View.GONE);
             mLoginFormView.setVisibility(show ? View.GONE : View.VISIBLE);
+        }
+
+        if (show) {
+            getSupportActionBar().hide();
+        } else {
+            getSupportActionBar().show();
         }
     }
 
