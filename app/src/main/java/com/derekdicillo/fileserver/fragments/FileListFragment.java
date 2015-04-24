@@ -11,7 +11,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AbsListView;
 import android.widget.AdapterView;
-import android.widget.ListAdapter;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -27,7 +26,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
-import java.util.List;
 
 /**
  * A fragment representing a list of Items.
@@ -50,11 +48,6 @@ public class FileListFragment extends Fragment {
      * Views.
      */
     private FileInfoArrayAdapter mAdapter;
-
-    /**
-     * The list of files used to populate the adapter
-     */
-    private List<FileInfo> mFiles;
 
     /**
      * Functions for interacting with the web server
@@ -129,10 +122,9 @@ public class FileListFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_filelist, container, false);
 
         // Set the adapter (initially empty)
-        mFiles = new ArrayList<>();
-        mAdapter.setData(mFiles);
+        mAdapter.setData(new ArrayList<FileInfo>());
         mListView = (AbsListView) view.findViewById(android.R.id.list);
-        ((AdapterView<ListAdapter>) mListView).setAdapter(mAdapter);
+        mListView.setAdapter(mAdapter);
 
         setEmptyText(getString(R.string.loading_data));
 
@@ -160,18 +152,18 @@ public class FileListFragment extends Fragment {
                 return true;
             case R.id.action_delete:
                 mAPI.fileDelete(fileName, new Response.Listener<JSONObject>() {
-                    @Override
-                    public void onResponse(JSONObject response) {
-                        Toast.makeText(getActivity(), R.string.delete_success, Toast.LENGTH_LONG).show();
-                        refreshFileList();
-                    }
-                },
-                new Response.ErrorListener() {
-                    @Override
-                    public void onErrorResponse(VolleyError error) {
-                        FileAPI.handleNetworkError(getActivity(), error);
-                    }
-                });
+                            @Override
+                            public void onResponse(JSONObject response) {
+                                Toast.makeText(getActivity(), R.string.delete_success, Toast.LENGTH_LONG).show();
+                                refreshFileList();
+                            }
+                        },
+                        new Response.ErrorListener() {
+                            @Override
+                            public void onErrorResponse(VolleyError error) {
+                                FileAPI.handleNetworkError(getActivity(), error);
+                            }
+                        });
                 return true;
             default:
                 return super.onContextItemSelected(item);

@@ -223,18 +223,11 @@ public class LoginActivity extends ActionBarActivity implements LoaderCallbacks<
                         });
             } else {
                 Log.d(TAG, String.format("Sign Up Request Params-- %s:%s", email, password));
-//                SharedPreferences.Editor editor = mPrefs.edit();
-//                editor.putString(FileAPI.EMAIL, email);
-//                editor.putString(FileAPI.PASSWORD, password);
-//                editor.apply();
                 mAPI.signup(email, password, new Response.Listener<JSONObject>() {
                             @Override
                             public void onResponse(JSONObject response) {
                                 Toast.makeText(mCtx, R.string.signup_success, Toast.LENGTH_LONG).show();
                                 showProgress(false);
-//                                String email = mPrefs.getString(FileAPI.EMAIL, "");
-//                                String password = mPrefs.getString(FileAPI.PASSWORD, "");
-//                                mPrefs.edit().clear().apply();
                                 mLogin = true;
                                 attemptLogin();
                             }
@@ -338,7 +331,7 @@ public class LoginActivity extends ActionBarActivity implements LoaderCallbacks<
 
     @Override
     public void onLoadFinished(Loader<Cursor> cursorLoader, Cursor cursor) {
-        List<String> emails = new ArrayList<String>();
+        List<String> emails = new ArrayList<>();
         cursor.moveToFirst();
         while (!cursor.isAfterLast()) {
             emails.add(cursor.getString(ProfileQuery.ADDRESS));
@@ -356,7 +349,7 @@ public class LoginActivity extends ActionBarActivity implements LoaderCallbacks<
     private void addEmailsToAutoComplete(List<String> emailAddressCollection) {
         //Create adapter to tell the AutoCompleteTextView what to show in its dropdown list.
         ArrayAdapter<String> adapter =
-                new ArrayAdapter<String>(LoginActivity.this,
+                new ArrayAdapter<>(LoginActivity.this,
                         android.R.layout.simple_dropdown_item_1line, emailAddressCollection);
 
         mEmailView.setAdapter(adapter);
@@ -370,7 +363,6 @@ public class LoginActivity extends ActionBarActivity implements LoaderCallbacks<
         };
 
         int ADDRESS = 0;
-        int IS_PRIMARY = 1;
     }
 }
 

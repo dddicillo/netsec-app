@@ -1,10 +1,6 @@
 package com.derekdicillo.fileserver;
 
-import android.app.DownloadManager;
-import android.content.BroadcastReceiver;
-import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
@@ -13,7 +9,6 @@ import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.Toast;
 
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
@@ -28,11 +23,7 @@ public class MainActivity extends ActionBarActivity {
     private static final String TAG = "MainActivity";
     private static final int REQUEST_CHOOSER = 1324;
 
-
-    private Context mCtx;
-    private SharedPreferences mPrefs;
     private FileAPI mAPI;
-    private BroadcastReceiver mReceiver;
 
     /*
      * Reference to FileListFragment for reloading results
@@ -42,18 +33,12 @@ public class MainActivity extends ActionBarActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        mCtx = this;
+        mAPI = FileAPI.getInstance(getApplicationContext());
 
         // Launch LoginActivity if not authenticated
-        mPrefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+        SharedPreferences mPrefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
         if (!mPrefs.contains(FileAPI.USER_ID)) {
             launchLoginActivity();
-        }
-
-        // Run Diffie Hellman Key Exchange if no secret key exists
-        mAPI = FileAPI.getInstance(getApplicationContext());
-        if (!mPrefs.contains(FileAPI.SECRET_KEY)) {
-            mAPI.dhKeyExchange(this);
         }
 
         setContentView(R.layout.activity_main);
@@ -63,26 +48,6 @@ public class MainActivity extends ActionBarActivity {
                     .add(R.id.container, mFragment)
                     .commit();
         }
-
-        mReceiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                // TODO Add decryption and move file to 'Downloads' directory
-                Toast.makeText(mCtx, R.string.download_success, Toast.LENGTH_LONG).show();
-            }
-        };
-    }
-
-    @Override
-    protected void onResume() {
-        registerReceiver(mReceiver, new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE));
-        super.onResume();
-    }
-
-    @Override
-    protected void onPause() {
-        unregisterReceiver(mReceiver);
-        super.onPause();
     }
 
     @Override
