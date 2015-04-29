@@ -45,7 +45,7 @@ public class FileAPI {
     public static final String ACCESS_TOKEN_JSON = "id";
     public static final String USER_ID_JSON = "userId";
 
-    public static final String BASE_URL = "https://netsec.techexplored.io:4000/api/";
+    public static final String BASE_URL = "https://pdevio.com/api/";
     private static final String TAG = "FileAPI";
     private static FileAPI mInstance;
     private RequestQueue mRequestQueue;
